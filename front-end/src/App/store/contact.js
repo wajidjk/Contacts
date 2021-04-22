@@ -49,31 +49,6 @@ export const ContactStore = createContext();
 export const ContactProvidor = (properties) => {
   const [state, dispatch] = useReducer(_reducer, INITIAL_STATE);
 
-  // const editContact = payload => {
-  //     const _contacts = [...contacts];
-  //     const { name, lastname, phone, notes, company } = payload;
-  //     const contactFound = _contacts.find(data => data.name === name);
-
-  //     if (contactFound) {
-  //         contactFound.name = name;
-  //         contactFound.phone = phone;
-  //         contactFound.notes = notes;
-  //         contactFound.company = company;
-  //         contactFound.lastname = lastname;
-  //     }
-
-  //     setContacts(_contacts);
-  // };
-  // const deleteContact = name => {
-
-  //     const result = contacts.filter(el => `${el.name} ${el.lastname ? el.lastname : ''}`.trim() != name.trim());
-  //     setContacts(result);
-  // };
-  // const addNew = obj => {
-  //     contacts.push(obj);
-  // };
-
-  console.log(properties);
   return (
     <ContactStore.Provider
       value={{

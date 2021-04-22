@@ -9,6 +9,8 @@ import DialogActions from "@material-ui/core/DialogActions";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import { ACTIONS, ContactStore } from "../store/contact";
 import { Link, useHistory, useParams } from "react-router-dom";
+import { queryClient } from "../../api";
+import { useMutation, useQuery } from "react-query";
 
 export function ContactEditor(props) {
   const contactStore = useContext(ContactStore);
@@ -20,26 +22,109 @@ export function ContactEditor(props) {
   const [lastname, setLastName] = useState("");
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
-
   const [notes, setNotes] = useState("");
 
-  useEffect(() => {
-    if (params.name) {
-      const result = contactStore.state.find(
-        (data) =>
-          `${data.name} ${data.lastname ? data.lastname : ""}`.trim() ===
-          params.name
+  const { data, error, isLoading } = useQuery(
+    ["contacts", params.id],
+    async (a, b) => {
+      const response = await fetch(
+        `http://localhost:5000/api/contacts/${params.id}`
       );
 
-      if (result) {
-        setName(result.name || "");
-        setLastName(result.lastname || "");
-        setCompany(result.company || "");
-        setPhone(result.phone || "");
-        setNotes(result.notes || "");
-      }
+      return (await response.json()).contact;
+    },
+    {
+      enabled: !!params.id,
     }
-  }, []);
+  );
+
+  const { mutate: deleteContact } = useMutation(
+    async ({ id }) => {
+      const response = await fetch(`http://localhost:5000/api/contacts/${id}`, {
+        method: "DELETE",
+      });
+      console.log(response);
+      return await response.json();
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("contacts");
+        handleClose();
+        history.push("/");
+      },
+    }
+  );
+
+  const { mutate: addContact } = useMutation(
+    async (input) => {
+      console.log(input);
+      const response = await fetch(`http://localhost:5000/api/contacts/`, {
+        body: JSON.stringify(input),
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      });
+      console.log(response);
+      return (await response.json()).contact;
+    },
+    {
+      onSettled: (data) => {
+        const _contacts = queryClient.getQueryData(["contacts"]);
+        console.log({ _contacts });
+        queryClient.setQueryData(["contacts"], [..._contacts, data]);
+      },
+      onSuccess: () => {
+        history.push("/");
+      },
+    }
+  );
+
+  const { mutate: updateContact } = useMutation(
+    async (input) => {
+      console.log(input);
+      const response = await fetch(
+        `http://localhost:5000/api/contacts/${params.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(input),
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(response);
+      // neya contact
+      return (await response.json()).contact;
+    },
+    {
+      onSettled: (data) => {
+        // old contacts
+        const _contacts = queryClient.getQueryData(["contacts"]);
+
+        const index = _contacts.findIndex((el) => el._id === data._id);
+        if (index === -1) return;
+        _contacts[index] = data;
+
+        queryClient.setQueryData(["contacts"], _contacts);
+      },
+      onSuccess: () => {
+        history.push("/");
+      },
+    }
+  );
+
+  useEffect(() => {
+    if (data) {
+      setName(data.name || "");
+      setLastName(data.lastname || "");
+      setCompany(data.company || "");
+      setPhone(data.phone || "");
+      setNotes(data.notes || "");
+    }
+  }, [data]);
 
   const [open, setOpen] = React.useState(false);
 
@@ -71,12 +156,9 @@ export function ContactEditor(props) {
           <Button
             style={{ color: "red" }}
             onClick={() => {
-              contactStore.dispatch({
-                type: ACTIONS.DELETE_CONTACT,
-                payload: params.name,
+              deleteContact({
+                id: params.id,
               });
-              handleClose();
-              history.push("/");
             }}
             color="primary"
           >
@@ -96,43 +178,35 @@ export function ContactEditor(props) {
               alignItems: "center",
             }}
           >
-            <Link
-              style={{ textDecoration: "none", color: "blue" }}
-              to={`/contact/${params.name}`}
-            >
+            <Link style={{ textDecoration: "none", color: "blue" }} to={`/`}>
               Cancel
             </Link>
           </div>
 
-          <Link
+          <p
             style={{ textDecoration: "none", color: "blue" }}
             onClick={() => {
-              params.name
-                ? contactStore.dispatch({
-                    type: ACTIONS.EDIT_CONTACT,
-                    payload: {
-                      name,
-                      lastname,
-                      company,
-                      phone,
-                      notes,
-                    },
-                  })
-                : contactStore.dispatch({
-                    type: ACTIONS.ADD_CONTACT,
-                    payload: {
-                      name,
-                      lastname,
-                      company,
-                      phone,
-                      notes,
-                    },
-                  });
+              if (params.id) {
+                updateContact({
+                  name,
+                  lastname,
+                  company,
+                  phone,
+                  notes,
+                });
+              } else {
+                addContact({
+                  name,
+                  lastname,
+                  company,
+                  phone,
+                  notes,
+                });
+              }
             }}
-            to={params.name ? `/contact/${params.name}` : `/`}
           >
             Done
-          </Link>
+          </p>
         </div>
         <article>
           <div
@@ -258,7 +332,7 @@ export function ContactEditor(props) {
         </div>
         <br />
 
-        {params.name && (
+        {params.id && (
           <div
             style={{
               borderBottom: "1px solid rgb(207, 204, 204)",

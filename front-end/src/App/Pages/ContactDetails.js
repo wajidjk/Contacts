@@ -6,21 +6,26 @@ import VideoCallIcon from "@material-ui/icons/VideoCall";
 import MailOutlineIcon from "@material-ui/icons/MailOutline";
 import { Link, useParams } from "react-router-dom";
 import { ContactStore } from "../store/contact";
+import { useQuery } from "react-query";
 
 function ContactDetails() {
   const contactStore = useContext(ContactStore);
   const [notes, setNotes] = useState("");
   let params = useParams();
 
-  const result = contactStore.state.find(
-    (data) =>
-      `${data.name} ${data.lastname ? data.lastname : ""}`.trim() ===
-      params.name
+  const { data, error, isLoading } = useQuery(
+    ["contacts", params.id],
+    async (a, b) => {
+      console.log("fetching single contact");
+      const response = await fetch(
+        `http://localhost:5000/api/contacts/${params.id}`
+      );
+
+      return (await response.json()).contact;
+    }
   );
 
-  console.log({ result });
-
-  return result ? (
+  return data ? (
     <div className="main_div">
       <div
         className="center_div"
@@ -41,7 +46,7 @@ function ContactDetails() {
 
           <Link
             style={{ textDecoration: "none", color: "blue" }}
-            to={`/edit-contact/${params.name}`}
+            to={`/edit-contact/${params.id}`}
           >
             Edit
           </Link>
@@ -67,10 +72,8 @@ function ContactDetails() {
             />
           </div>
           <div style={{ marginTop: 20 }}>
-            <h4>{`${result.name} ${
-              result.lastname ? result.lastname : ""
-            }`}</h4>
-            <p style={{ fontSize: 12, color: "black" }}>{result.company}</p>
+            <h4>{`${data.name} ${data.lastname ? data.lastname : ""}`}</h4>
+            <p style={{ fontSize: 12, color: "black" }}>{data.company}</p>
           </div>
         </article>
         <div
@@ -117,7 +120,7 @@ function ContactDetails() {
               color: "blue",
             }}
           >
-            {result.phone}
+            {data.phone}
           </p>
         </div>
         <div className="box2">
@@ -136,7 +139,7 @@ function ContactDetails() {
                 backgroundColor: "white",
               }}
               placeholder="Notes"
-              value={result.notes}
+              value={data.notes}
               onChange={(e) => {
                 setNotes(e.target.value);
               }}
