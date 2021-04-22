@@ -2,7 +2,7 @@ const router = require("express").Router();
 const { isValidObjectId } = require("mongoose");
 let Contact = require("../models/contact");
 
-router.post("/contact", async (req, res, next) => {
+router.post("/contacts", async (req, res, next) => {
   try {
     const { name, lastname, phone, company, notes } = req.body;
     console.log(name, lastname, phone, company, notes);
@@ -23,7 +23,7 @@ router.post("/contact", async (req, res, next) => {
   }
 });
 
-router.delete("/contact/:id", async (req, res, next) => {
+router.delete("/contacts/:id", async (req, res, next) => {
   try {
     res.json({
       contact: await Contact.deleteOne({ _id: req.params.id }),
@@ -33,7 +33,7 @@ router.delete("/contact/:id", async (req, res, next) => {
   }
 });
 
-router.put("/contact/:id", async (req, res, next) => {
+router.put("/contacts/:id", async (req, res, next) => {
   try {
     const contact = await Contact.findById(req.params.id);
 
@@ -50,7 +50,7 @@ router.put("/contact/:id", async (req, res, next) => {
     });
   } catch (error) {}
 });
-router.get("/contact", async (req, res, next) => {
+router.get("/contacts", async (req, res, next) => {
   console.log("asas");
   try {
     const searchField = req.query.name;
@@ -64,6 +64,15 @@ router.get("/contact", async (req, res, next) => {
 
     return res.json({
       contacts: results,
+    });
+  } catch (error) {}
+});
+
+router.get("/contacts/:id", async (req, res, next) => {
+  console.log("asas");
+  try {
+    return res.json({
+      contact: await Contact.findById(req.params.id),
     });
   } catch (error) {}
 });
