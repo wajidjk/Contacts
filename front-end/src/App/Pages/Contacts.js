@@ -17,7 +17,7 @@ function Contacts() {
       return (await response.json()).contacts;
     },
     {
-      refetchOnMount: false,
+      // refetchOnMount: false,
       refetchOnWindowFocus: false,
     }
   );
