@@ -1,10 +1,21 @@
 const router = require("express").Router();
 const { isValidObjectId } = require("mongoose");
+const multer = require("multer");
 let Contact = require("../models/contact");
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "public");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + "-" + Date.now());
+  },
+});
+
+var upload = multer({ storage: storage });
 
 router.post("/contacts", async (req, res, next) => {
   try {
-    const { name, lastname, phone, company, notes } = req.body;
+    const { name, lastname, phone, company, notes, image } = req.body;
     console.log(name, lastname, phone, company, notes);
 
     const contact = new Contact();
@@ -14,6 +25,7 @@ router.post("/contacts", async (req, res, next) => {
     if (phone) contact.phone = phone;
     if (company) contact.company = company;
     if (notes) contact.notes = notes;
+    if (image) contact.image = image;
 
     return res.json({
       contact: await contact.save(),
@@ -37,13 +49,14 @@ router.put("/contacts/:id", async (req, res, next) => {
   try {
     const contact = await Contact.findById(req.params.id);
 
-    const { name, lastname, phone, company, notes } = req.body;
+    const { name, lastname, phone, company, notes, image } = req.body;
 
     if (name) contact.name = name;
     if (lastname) contact.lastname = lastname;
     if (phone) contact.phone = phone;
     if (company) contact.company = company;
     if (notes) contact.notes = notes;
+    if (image) contact.image = image;
 
     return res.json({
       contact: await contact.save(),
@@ -75,6 +88,13 @@ router.get("/contacts/:id", async (req, res, next) => {
       contact: await Contact.findById(req.params.id),
     });
   } catch (error) {}
+});
+
+router.post("/upload", upload.single("image"), async (req, res, next) => {
+  console.log("ye start hua", req.body);
+  return res.json({
+    path: req.file.filename,
+  });
 });
 
 module.exports = router;
