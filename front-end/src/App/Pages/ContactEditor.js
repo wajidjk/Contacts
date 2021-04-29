@@ -23,6 +23,8 @@ export function ContactEditor(props) {
   const [company, setCompany] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [image, setImage] = useState("");
+  const [localImage, setLocalImage] = useState("");
 
   const { data, error, isLoading } = useQuery(
     ["contacts", params.id],
@@ -57,7 +59,15 @@ export function ContactEditor(props) {
 
   const { mutate: addContact } = useMutation(
     async (input) => {
-      console.log(input);
+      if (input.image) {
+        const formData = new FormData();
+        formData.set("image", input.image);
+        const response = await fetch(`http://localhost:5000/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        input.image = (await response.json()).path;
+      }
       const response = await fetch(`http://localhost:5000/api/contacts/`, {
         body: JSON.stringify(input),
         method: "POST",
@@ -83,7 +93,15 @@ export function ContactEditor(props) {
 
   const { mutate: updateContact } = useMutation(
     async (input) => {
-      console.log(input);
+      if (input.image) {
+        const formData = new FormData();
+        formData.set("image", input.image);
+        const response = await fetch(`http://localhost:5000/api/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        input.image = (await response.json()).path;
+      }
       const response = await fetch(
         `http://localhost:5000/api/contacts/${params.id}`,
         {
@@ -123,6 +141,10 @@ export function ContactEditor(props) {
       setCompany(data.company || "");
       setPhone(data.phone || "");
       setNotes(data.notes || "");
+      setLocalImage(
+        (data.image && `http://localhost:5000/${data.image}`) ||
+          `https://i.stack.imgur.com/y9DpT.jpg`
+      );
     }
   }, [data]);
 
@@ -135,6 +157,16 @@ export function ContactEditor(props) {
   const handleClose = () => {
     setOpen(false);
   };
+
+  useEffect(() => {
+    if (image) {
+      const reader = new FileReader();
+      reader.readAsDataURL(image);
+      reader.onload = () => {
+        setLocalImage(reader.result);
+      };
+    }
+  }, [image]);
 
   return (
     <div className="main_div">
@@ -193,6 +225,7 @@ export function ContactEditor(props) {
                   company,
                   phone,
                   notes,
+                  image,
                 });
               } else {
                 addContact({
@@ -201,6 +234,7 @@ export function ContactEditor(props) {
                   company,
                   phone,
                   notes,
+                  image,
                 });
               }
             }}
@@ -224,12 +258,27 @@ export function ContactEditor(props) {
                 width: 100,
                 objectFit: "cover",
               }}
-              src="https://cdn.psychologytoday.com/sites/default/files/styles/article-inline-half-caption/public/field_blog_entry_images/2018-09/shutterstock_648907024.jpg?itok=0hb44OrI"
+              src={localImage || `https://i.stack.imgur.com/y9DpT.jpg`}
               alt=""
             />
           </div>
           <div style={{ marginTop: 5, fontSize: 14 }}>
-            <h4 style={{ color: "blue", fontWeight: "lighter" }}>Edit</h4>
+            <label
+              htmlFor="photo"
+              style={{ color: "blue", fontWeight: "lighter" }}
+            >
+              Choose Image
+            </label>
+            <input
+              onChange={(e) => {
+                setImage(e.target.files[0]);
+              }}
+              style={{
+                display: "none",
+              }}
+              id="photo"
+              type="file"
+            />
           </div>
         </article>
         <div

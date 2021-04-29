@@ -67,7 +67,10 @@ function ContactDetails() {
                 width: 60,
                 objectFit: "cover",
               }}
-              src="https://cdn.psychologytoday.com/sites/default/files/styles/article-inline-half-caption/public/field_blog_entry_images/2018-09/shutterstock_648907024.jpg?itok=0hb44OrI"
+              src={
+                (data.image && `http://localhost:5000/${data.image}`) ||
+                `https://i.stack.imgur.com/y9DpT.jpg`
+              }
               alt=""
             />
           </div>
